@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { appKit, wagmiAdapter, walletKit } from "./config";
 import { useAppKit, useAppKitState, useAppKitAccount } from "@reown/appkit/react";
-import { useBalance, useChainId, useDisconnect } from "wagmi";
+import { useBalance, useAccount, useChainId, useDisconnect } from "wagmi";
 import "./App.css";
 import Integrations from "./integrations/Integrations";
 import SendCrypto from "./components/SendCrypto";
 import ReceiveCrypto from "./components/ReceiveCrypto";
-import { formatBalance, getMultipleTokenBalances } from "./utils/balance";
+import { getEthBalance, formatBalance, getMultipleTokenBalances } from "./utils/balance";
 import { formatAddress, getExplorerUrl } from "./utils/transactions";
 
 // Common ERC-20 token addresses for demonstration
@@ -28,6 +28,7 @@ function App() {
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [tokenBalances, setTokenBalances] = useState<Record<string, string>>({});
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
 
   const isConnected = !!address && !!appKitState.activeChain;
@@ -70,8 +71,6 @@ function App() {
       try {
         // WalletKit initialization for advanced features
         console.log("WalletKit initialized for address:", address);
-        console.log("WagmiAdapter:", wagmiAdapter);
-        console.log("WalletKit instance:", walletKit);
       } catch (error) {
         console.error("WalletKit initialization failed:", error);
       }
@@ -264,6 +263,80 @@ function App() {
           address={address}
         />
       )}
+    </div>
+  );
+}
+
+export default App;
+
+  // Disconnect wallet
+  const handleDisconnect = async () => {
+    try {
+      await appKit.disconnect();
+    } catch (error) {
+      console.error("Failed to disconnect:", error);
+    }
+  };
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1>InvestreWallet</h1>
+        <p>A modern crypto wallet application</p>
+      </header>
+
+      <main className="app-main">
+        {!isConnected ? (
+          <div className="connect-section">
+            <h2>Connect Your Wallet</h2>
+            <p>
+              Connect to your favorite wallet or create a new embedded wallet to
+              start managing your crypto assets securely.
+            </p>
+            <button
+              onClick={handleConnect}
+              disabled={isConnecting}
+              className="connect-button"
+            >
+              {isConnecting ? "Connecting..." : "Connect Wallet"}
+            </button>
+          </div>
+        ) : (
+          <div className="wallet-section">
+            <h2>Wallet Connected</h2>
+            <div className="wallet-info">
+              <p>
+                <strong>Address:</strong> {address}
+              </p>
+              <p>
+                <strong>Balance:</strong> {balance} ETH
+              </p>
+            </div>
+            <div className="action-buttons">
+              <button
+                onClick={() => {
+                  /* TODO: Send */
+                }}
+                className="send-button"
+              >
+                Send
+              </button>
+              <button
+                onClick={() => {
+                  /* TODO: Receive */
+                }}
+                className="receive-button"
+              >
+                Receive
+              </button>
+              <button onClick={handleDisconnect} className="disconnect-button">
+                Disconnect
+              </button>
+            </div>
+          </div>
+        )}
+        <Integrations />
+      </main>
     </div>
   );
 }

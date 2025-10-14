@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { WalletConnectService } from "../utils/walletconnect";
+import { projectId } from "../config";
 import { useAppKitState } from "@reown/appkit/react";
 import { useWalletConnect } from "../hooks/useWalletConnect";
 import { useWalletKit } from "../hooks/useWalletKit";
@@ -32,65 +34,6 @@ const Integrations: React.FC = () => {
     }
   };
 
-  const handleWCConnect = async () => {
-    try {
-      await walletConnect.connect();
-    } catch (error) {
-      console.error("WalletConnect connection failed:", error);
-    }
-  };
-
-  const handleWCDisconnect = async () => {
-    try {
-      await walletConnect.disconnect();
-    } catch (error) {
-      console.error("WalletConnect disconnect failed:", error);
-    }
-  };
-
-  const handleSignMessage = async () => {
-    if (!walletConnect.isConnected) return;
-    
-    try {
-      const message = "Hello from InvestreWallet!";
-      const signature = await walletConnect.signMessage(message);
-      alert(`Message signed: ${signature}`);
-    } catch (error) {
-      console.error("Message signing failed:", error);
-      alert("Failed to sign message");
-    }
-  };
-
-  const handleWalletKitAction = async (action: string) => {
-    try {
-      switch (action) {
-        case "add_token":
-          await walletKit.addToken({
-            type: "ERC20",
-            options: {
-              address: "0xA0b86a33E6417fE5e1E04B1e5c7b5C2F9d8f5D5E",
-              symbol: "USDC",
-              decimals: 6,
-              image: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png"
-            }
-          });
-          alert("Token add request sent!");
-          break;
-        
-        case "switch_chain":
-          await walletKit.switchChain(137); // Polygon
-          alert("Chain switch request sent!");
-          break;
-          
-        default:
-          console.log("Unknown action:", action);
-      }
-    } catch (error) {
-      console.error("WalletKit action failed:", error);
-      alert("Action failed: " + (error instanceof Error ? error.message : "Unknown error"));
-    }
-  };
-
   return (
     <div className="integrations-section">
       <h2>Advanced Integrations</h2>
@@ -100,17 +43,17 @@ const Integrations: React.FC = () => {
         <h3>🔗 WalletConnect v2</h3>
         <p>Direct WalletConnect integration for enhanced wallet connections</p>
         
-        {!walletConnect.isConnected ? (
+        {!wcConnected ? (
           <button
             onClick={handleWCConnect}
-            disabled={walletConnect.isConnecting}
+            disabled={isConnecting}
             className="integration-button"
           >
-            {walletConnect.isConnecting ? "Connecting..." : "Connect via WalletConnect"}
+            {isConnecting ? "Connecting..." : "Connect via WalletConnect"}
           </button>
         ) : (
           <div className="wc-connected">
-            <p><strong>Connected:</strong> {walletConnect.address}</p>
+            <p><strong>Connected:</strong> {wcAddress}</p>
             <div className="wc-actions">
               <button onClick={handleSignMessage} className="sign-button">
                 Sign Message
@@ -120,46 +63,6 @@ const Integrations: React.FC = () => {
               </button>
             </div>
           </div>
-        )}
-        
-        {walletConnect.error && (
-          <div className="error-message">
-            {walletConnect.error}
-          </div>
-        )}
-      </div>
-
-      {/* WalletKit Features */}
-      <div className="integration-card">
-        <h3>🛠️ WalletKit Features</h3>
-        <p>Advanced wallet management capabilities using Reown WalletKit</p>
-        
-        <div className="walletkit-actions">
-          <button 
-            onClick={() => handleWalletKitAction("add_token")}
-            disabled={walletKit.isLoading}
-            className="integration-button"
-          >
-            Add USDC Token
-          </button>
-          
-          <button 
-            onClick={() => handleWalletKitAction("switch_chain")}
-            disabled={walletKit.isLoading}
-            className="integration-button"
-          >
-            Switch to Polygon
-          </button>
-        </div>
-        
-        {walletKit.error && (
-          <div className="error-message">
-            {walletKit.error}
-          </div>
-        )}
-        
-        {walletKit.isLoading && (
-          <div className="loading">Processing request...</div>
         )}
       </div>
 
@@ -202,23 +105,25 @@ const Integrations: React.FC = () => {
         </div>
       </div>
 
-      {/* Developer Tools Toggle */}
+      {/* Transaction Tools */}
       <div className="integration-card">
         <h3>🛠️ Developer Tools</h3>
         <p>Advanced transaction and debugging features</p>
         
-        <button 
-          onClick={() => setShowDeveloperTools(!showDeveloperTools)}
-          className="integration-button"
-        >
-          {showDeveloperTools ? "Hide" : "Show"} Developer Tools
-        </button>
-        
-        {showDeveloperTools && (
-          <div className="developer-tools-container">
-            <DeveloperTools />
-          </div>
-        )}
+        <div className="dev-tools">
+          <button className="tool-button">
+            Raw Transaction
+          </button>
+          <button className="tool-button">
+            Sign Typed Data
+          </button>
+          <button className="tool-button">
+            Contract Interaction
+          </button>
+          <button className="tool-button">
+            Gas Estimation
+          </button>
+        </div>
       </div>
 
       {/* Integration Status */}
@@ -229,13 +134,9 @@ const Integrations: React.FC = () => {
             <span>AppKit:</span>
             <span>{appKitState.activeChain ? "✅ Connected" : "❌ Disconnected"}</span>
           </div>
-          <div className={`status-item ${walletConnect.isConnected ? 'active' : 'inactive'}`}>
+          <div className={`status-item ${wcConnected ? 'active' : 'inactive'}`}>
             <span>WalletConnect:</span>
-            <span>{walletConnect.isConnected ? "✅ Connected" : "❌ Disconnected"}</span>
-          </div>
-          <div className={`status-item ${!walletKit.error ? 'active' : 'inactive'}`}>
-            <span>WalletKit:</span>
-            <span>{!walletKit.error ? "✅ Ready" : "❌ Error"}</span>
+            <span>{wcConnected ? "✅ Connected" : "❌ Disconnected"}</span>
           </div>
           <div className={`status-item ${farcasterData ? 'active' : 'inactive'}`}>
             <span>Farcaster:</span>
