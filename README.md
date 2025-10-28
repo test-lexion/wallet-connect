@@ -1,7 +1,6 @@
 **A Modern and Secure Cryptocurrency Wallet**
 
 InvestreWallet is a contemporary and secure cryptocurrency wallet application engineered with the latest web technologies, including React 19, TypeScript, and Vite. It offers a seamless and secure gateway to the world of decentralized applications (dApps) and blockchain networks through its integration with Reown, the evolution of WalletConnect.
-
 ### **Core Features**
 
 *   **Secure Wallet Integration:** Effortlessly connect to a wide array of popular crypto wallets using Reown's state-of-the-art and secure protocol.
